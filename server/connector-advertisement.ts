@@ -86,6 +86,15 @@ export function parseConnectorServiceSlugsEnv(raw: string | undefined): readonly
     : [];
 }
 
+/** Code-execution tools the relay rewrites to COMPOSIO_PROXY_EXECUTE, which no
+ *  grant can ever allow. Advertising them only invites a call that is refused
+ *  however the bot is configured, so they are never offered. */
+export const CONNECTOR_OPAQUE_TOOLS: readonly string[] = [
+  "COMPOSIO_PROXY_EXECUTE",
+  "COMPOSIO_REMOTE_WORKBENCH",
+  "COMPOSIO_REMOTE_BASH_TOOL",
+];
+
 /** Offered when its service is granted with `"*"`, its exact name is granted, or it is that service's connection flow.
  *  COMPOSIO_MANAGE_CONNECTIONS is always offered: a bot with no grants still has to be able to ask for a sign-in. */
 export function connectorToolAdvertised(
@@ -93,6 +102,7 @@ export function connectorToolAdvertised(
   grants: Record<string, ConnectorToolGrant>,
   candidates: readonly string[] = [],
 ): boolean {
+  if (CONNECTOR_OPAQUE_TOOLS.includes(name)) return false;
   if (name === "COMPOSIO_MANAGE_CONNECTIONS") return true;
   if (Object.keys(grants).length > 0 && CONNECTOR_META_TOOLS.includes(name)) return true;
   const service = serviceSlugForCandidates(name, candidates) ?? serviceSlugFor(name);

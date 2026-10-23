@@ -54,7 +54,7 @@ export function normalizeConnectorScopes(value: unknown): ConnectorScopes | null
 
 export type ConnectorAccess =
   | { ok: true }
-  | { ok: false; slug: string; toolkit: string; reason: "app" | "write" };
+  | { ok: false; slug: string; toolkit: string; reason: "app" | "write" | "opaque" };
 
 /** May this bot run these calls? The first refusal wins, so a batch that
  * mixes an allowed read with a forbidden write is refused whole rather
@@ -64,7 +64,11 @@ export function connectorAccessDecision(scopes: ConnectorScopes | undefined, cal
   for (const call of calls) {
     const toolkit = toolkits.filter(candidate => call.slug.startsWith(candidate.toUpperCase() + "_"))
       .sort((a, b) => b.length - a.length)[0] ?? toolkitOf(call.slug);
-    const scope = call.slug === "COMPOSIO_PROXY_EXECUTE" || !Object.hasOwn(scopes.apps, toolkit) ? undefined : scopes.apps[toolkit];
+    // Opaque code execution can never be matched to a per-tool grant, so no
+    // setting can allow it. Report that separately: "app" tells the model to
+    // ask for access, and every such ask is a dead end.
+    if (call.slug === "COMPOSIO_PROXY_EXECUTE") return { ok: false, slug: call.slug, toolkit, reason: "opaque" };
+    const scope = !Object.hasOwn(scopes.apps, toolkit) ? undefined : scopes.apps[toolkit];
     if (!scope) return { ok: false, slug: call.slug, toolkit, reason: "app" };
     if (scope === "read" && !isReadOnlyAction(call.slug, toolkit)) return { ok: false, slug: call.slug, toolkit, reason: "write" };
   }

@@ -127,6 +127,16 @@ describe("tools/list frame filtering", () => {
     expect((filtered.result as { tools: unknown[] }).tools).toEqual([{ name: "COMPOSIO_MANAGE_CONNECTIONS" }]);
   });
 
+  it("never offers the code-execution tools no grant can allow", () => {
+    const all = grants({ composio: { tools: "*" }, gmail: { tools: "*" } });
+    expect(connectorToolAdvertised("COMPOSIO_PROXY_EXECUTE", all)).toBe(false);
+    expect(connectorToolAdvertised("COMPOSIO_REMOTE_WORKBENCH", all)).toBe(false);
+    expect(connectorToolAdvertised("COMPOSIO_REMOTE_BASH_TOOL", all)).toBe(false);
+    // The auditable meta-tools stay available: they are how a bot reaches apps.
+    expect(connectorToolAdvertised("COMPOSIO_MULTI_EXECUTE_TOOL", all)).toBe(true);
+    expect(connectorToolAdvertised("COMPOSIO_SEARCH_TOOLS", all)).toBe(true);
+  });
+
   it("passes frames it cannot read through unchanged instead of guessing", () => {
     const noResult = { jsonrpc: "2.0" as const, id: 10, error: { code: -32000, message: "upstream" } };
     expect(filterToolsListFrame(noResult, grants({ gmail: { tools: "*" } }))).toBe(noResult);

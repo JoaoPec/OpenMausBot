@@ -82,7 +82,7 @@ describe("connectorAccessDecision", () => {
   });
 
   it("never lets a raw API proxy through a scoped bot", () => {
-    expect(connectorAccessDecision({ apps: { gmail: "write" } }, calls("COMPOSIO_PROXY_EXECUTE"))).toMatchObject({ ok: false, reason: "app" });
+    expect(connectorAccessDecision({ apps: { gmail: "write" } }, calls("COMPOSIO_PROXY_EXECUTE"))).toMatchObject({ ok: false, reason: "opaque" });
   });
 });
 

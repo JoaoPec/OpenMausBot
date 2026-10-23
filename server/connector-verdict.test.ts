@@ -208,4 +208,13 @@ describe("refusal text", () => {
     expect(connectorScopeRefusalText(tools, "app", "Scout", "Gmail", "Send email")).toContain("Scout has not been given access to Gmail");
     expect(connectorScopeRefusalText(tools, "write", "Scout", "Gmail", "Send email")).toContain("Gmail is read-only for Scout, and Send email would write to it");
   });
+
+  it("names an opaque call as unallowable instead of sending the user to Access settings", () => {
+    const proxy = connectorCallFromFrame(toolsCall("COMPOSIO_PROXY_EXECUTE", { code: "..." }));
+    const text = connectorScopeRefusalText(proxy, "opaque", "Scout", "Composio", "Proxy execute");
+    expect(text).toContain("no setting can allow it");
+    expect(text).toContain(COMPOSIO_MULTI_EXECUTE_TOOL);
+    expect(text).not.toContain("has not been given access");
+    expect(text).not.toContain("Access settings");
+  });
 });

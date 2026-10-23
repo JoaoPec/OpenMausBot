@@ -146,8 +146,15 @@ export function connectorUnrecognizedText(invoked: string, reason: string): stri
   ].join(" ");
 }
 
-export function connectorScopeRefusalText(call: ConnectorCall, reason: "app" | "write", bot: string, app: string, tool: string): string {
+export function connectorScopeRefusalText(call: ConnectorCall, reason: "app" | "write" | "opaque", bot: string, app: string, tool: string): string {
   if (call.kind === "unrecognized") return connectorUnrecognizedText(call.invoked, call.reason);
+  if (reason === "opaque") {
+    return [
+      `OpenMausBot did not run this: ${tool} runs code it cannot check against ${bot}'s tool grants, so no setting can allow it.`,
+      "This call was not performed.",
+      `Use ${COMPOSIO_MULTI_EXECUTE_TOOL} with the app tools instead, for example tools: [{ tool_slug: "SLACK_...", arguments: {...} }].`,
+    ].join(" ");
+  }
   return reason === "app"
     ? `OpenMausBot did not run this: ${bot} has not been given access to ${app}. Ask the user to allow it under the bot's Access settings, and do not retry.`
     : `OpenMausBot did not run this: ${app} is read-only for ${bot}, and ${tool} would write to it. Ask the user before trying again.`;
